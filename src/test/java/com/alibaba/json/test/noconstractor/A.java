@@ -11,13 +11,19 @@ import java.sql.Timestamp;
  */
 public class A {
 
-    public Timestamp b;
+    private Timestamp b;
+    private long c;
 
-    public A(Timestamp b) {
+    public A(Timestamp b,long c) {
         this.b = b;
+        this.c=c;
     }
 
     public Timestamp getB() {
         return b;
+    }
+
+    public long getC() {
+        return c;
     }
 }

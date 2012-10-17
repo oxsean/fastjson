@@ -508,30 +508,44 @@ public class ASMDeserializerFactory implements Opcodes {
             FieldInfo fieldInfo = context.getFieldInfoList().get(i);
             Class<?> fieldClass = fieldInfo.getFieldClass();
             Type fieldType = fieldInfo.getFieldType();
-
+            Field field=fieldInfo.getField();
+            boolean useReflection = context.getBeanInfo().getObjectInstantiator() != null && !Modifier.isPublic(field.getModifiers());
             mw.visitVarInsn(ALOAD, context.var("instance"));
             if (fieldClass == boolean.class) {
                 mw.visitVarInsn(ILOAD, context.var(fieldInfo.getName() + "_asm"));
+                if (useReflection) {
+                    mw.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
+                }
             } else if (fieldClass == byte.class) {
                 mw.visitVarInsn(ILOAD, context.var(fieldInfo.getName() + "_asm"));
+                if (useReflection) {
+                    mw.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;");
+                }
             } else if (fieldClass == short.class) {
                 mw.visitVarInsn(ILOAD, context.var(fieldInfo.getName() + "_asm"));
+                if (useReflection) {
+                    mw.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;");
+                }
             } else if (fieldClass == int.class) {
                 mw.visitVarInsn(ILOAD, context.var(fieldInfo.getName() + "_asm"));
+                if (useReflection) {
+                    mw.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
+                }
             } else if (fieldClass == long.class) {
                 mw.visitVarInsn(LLOAD, context.var(fieldInfo.getName() + "_asm", 2));
-                if (fieldInfo.getMethod() != null) {
-                    mw.visitMethodInsn(INVOKEVIRTUAL, getType(context.getClazz()), fieldInfo.getMethod().getName(),
-                                       "(J)V");
-                } else {
-                    mw.visitFieldInsn(PUTFIELD, getType(fieldInfo.getDeclaringClass()), fieldInfo.getField().getName(),
-                                      getDesc(fieldInfo.getFieldClass()));
+                if (useReflection) {
+                    mw.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
                 }
-                continue;
             } else if (fieldClass == float.class) {
                 mw.visitVarInsn(FLOAD, context.var(fieldInfo.getName() + "_asm"));
+                if (useReflection) {
+                    mw.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;");
+                }
             } else if (fieldClass == double.class) {
                 mw.visitVarInsn(DLOAD, context.var(fieldInfo.getName() + "_asm", 2));
+                if (useReflection) {
+                    mw.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
+                }
             } else if (fieldClass == String.class) {
                 mw.visitVarInsn(ALOAD, context.var(fieldInfo.getName() + "_asm"));
             } else if (fieldClass.isEnum()) {
@@ -557,21 +571,16 @@ public class ASMDeserializerFactory implements Opcodes {
             if (fieldInfo.getMethod() != null) {
                 mw.visitMethodInsn(INVAKE_TYPE, getType(fieldInfo.getDeclaringClass()),
                                    fieldInfo.getMethod().getName(), getDesc(fieldInfo.getMethod()));
-
                 if (!fieldInfo.getMethod().getReturnType().equals(Void.TYPE)) {
                     mw.visitInsn(POP);
                 }
+            } else if (useReflection) {
+                mw.visitLdcInsn(field.getName());
+                mw.visitMethodInsn(INVOKESTATIC, "com/alibaba/fastjson/util/FieldUtils", "setValue",
+                        "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;)V");
             } else {
-                if(context.getBeanInfo().getObjectInstantiator()!=null){
-                    Field field=fieldInfo.getField();
-                    if(!Modifier.isPublic(field.getModifiers())){
-                        mw.visitLdcInsn(field.getName());
-                        mw.visitMethodInsn(INVOKESTATIC, "com/alibaba/fastjson/util/FieldUtils", "setValue", "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;)V");
-                        continue;
-                    }
-                }
                 mw.visitFieldInsn(PUTFIELD, getType(fieldInfo.getDeclaringClass()), fieldInfo.getField().getName(),
-                                  getDesc(fieldInfo.getFieldClass()));
+                        getDesc(fieldInfo.getFieldClass()));
             }
         }
     }

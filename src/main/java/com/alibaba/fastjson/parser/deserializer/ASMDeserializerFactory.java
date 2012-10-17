@@ -321,7 +321,8 @@ public class ASMDeserializerFactory implements Opcodes {
 
             } else if (Collection.class.isAssignableFrom(fieldClass)) {
 
-                Type actualTypeArgument = ((ParameterizedType) fieldType).getActualTypeArguments()[0];
+               Type[] actualTypeArguments =((ParameterizedType) fieldType).getActualTypeArguments();
+                Type actualTypeArgument = actualTypeArguments[0];
 
                 if (actualTypeArgument instanceof Class) {
                     Class<?> itemClass = (Class<?>) actualTypeArgument;
@@ -330,7 +331,7 @@ public class ASMDeserializerFactory implements Opcodes {
                         throw new ASMException("can not create ASMParser");
                     }
 
-                    if (itemClass == String.class) {
+                    if (actualTypeArguments.length == 1 && itemClass == String.class) {
                         mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(getDesc(fieldClass))); // cast
                         mw.visitMethodInsn(INVOKEVIRTUAL, getType(JSONScanner.class), "scanFieldStringArray",
                                            "([CLjava/lang/Class;)" + getDesc(Collection.class));

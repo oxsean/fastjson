@@ -35,6 +35,10 @@ public class CollectionDeserializer implements ObjectDeserializer {
         } else if (rawClass.isAssignableFrom(ArrayList.class)) {
             list = new ArrayList();
         } else {
+            ObjectDeserializer deserializer = parser.getConfig().getDerializers().get(rawClass);
+            if (deserializer != null) {
+                return deserializer.deserialze(parser, type, fieldName);
+            }
             try {
                 list = (Collection) rawClass.newInstance();
             } catch (Exception e) {

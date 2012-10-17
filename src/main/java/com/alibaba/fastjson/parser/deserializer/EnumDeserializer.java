@@ -37,7 +37,7 @@ public class EnumDeserializer implements ObjectDeserializer {
     @SuppressWarnings("unchecked")
     public <T> T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
         try {
-            Object value;
+            Object value = null;
             final JSONLexer lexer = parser.getLexer();
             if (lexer.token() == JSONToken.LITERAL_INT) {
                 value = lexer.intValue();
@@ -53,17 +53,40 @@ public class EnumDeserializer implements ObjectDeserializer {
                 lexer.nextToken(JSONToken.COMMA);
 
                 if (strVal.length() == 0) {
-                    return (T) null;
+                    return null;
                 }
-
-                value = nameMap.get(strVal);
-
                 return (T) Enum.valueOf((Class<Enum>) enumClass, strVal);
             } else if (lexer.token() == JSONToken.NULL) {
-                value = null;
                 lexer.nextToken(JSONToken.COMMA);
-
                 return null;
+            } else if (lexer.token() == JSONToken.COMMA) {
+                boolean isValue = false;
+                for (; ; ) {
+                    if (lexer.token() == JSONToken.RBRACE) {
+                        lexer.nextToken();
+                        break;
+                    }
+                    switch (lexer.token()) {
+                        case JSONToken.COLON:
+                            isValue = true;
+                            break;
+                        case JSONToken.LITERAL_INT:
+                            int ordinal = lexer.intValue();
+                            T e = (T) ordinalMap.get(ordinal);
+                            if (e == null) {
+                                throw new JSONException("parse enum " + enumClass.getName() + " error, value : " + ordinal);
+                            }
+                            value = e;
+                            break;
+                        case JSONToken.LITERAL_STRING:
+                            if (isValue) {
+                                String v = lexer.stringVal();
+                                value = Enum.valueOf((Class<Enum>) enumClass, v);
+                            }
+                    }
+                    lexer.nextToken();
+                }
+                return (T) value;
             } else {
                 value = parser.parse();
             }

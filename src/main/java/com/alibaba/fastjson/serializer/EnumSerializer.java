@@ -15,6 +15,7 @@
  */
 package com.alibaba.fastjson.serializer;
 
+import java.awt.*;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
@@ -32,12 +33,21 @@ public class EnumSerializer implements ObjectSerializer {
             return;
         }
 
+        if (out.isEnabled(SerializerFeature.WriteClassName)) {
+            out.writeFieldValue('{', "@type", object.getClass().getName());
+            out.write(',');
+            out.writeFieldName("v");
+        }
         if (serializer.isEnabled(SerializerFeature.WriteEnumUsingToString)) {
             Enum<?> e = (Enum<?>) object;
             serializer.write(e.name());
         } else {
             Enum<?> e = (Enum<?>) object;
             out.writeInt(e.ordinal());
+        }
+
+        if (out.isEnabled(SerializerFeature.WriteClassName)) {
+            out.write('}');
         }
     }
 }

@@ -449,8 +449,12 @@ public class JSONSerializer {
                 config.put(clazz, EnumSerializer.instance);
             } else if (clazz.isArray()) {
                 Class<?> componentType = clazz.getComponentType();
-                ObjectSerializer compObjectSerializer = getObjectWriter(componentType);
-                config.put(clazz, new ArraySerializer(compObjectSerializer));
+                if (componentType.isInterface()) {
+                    return config.get(Object[].class);
+                } else {
+                    ObjectSerializer compObjectSerializer = getObjectWriter(componentType);
+                    config.put(clazz, new ArraySerializer(compObjectSerializer));
+                }
             } else if (Throwable.class.isAssignableFrom(clazz)) {
                 config.put(clazz, new ExceptionSerializer(clazz));
             } else if (TimeZone.class.isAssignableFrom(clazz)) {

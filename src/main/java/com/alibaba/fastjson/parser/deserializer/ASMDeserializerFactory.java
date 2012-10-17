@@ -3,11 +3,7 @@ package com.alibaba.fastjson.parser.deserializer;
 import static com.alibaba.fastjson.util.ASMUtils.getDesc;
 import static com.alibaba.fastjson.util.ASMUtils.getType;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -200,6 +196,17 @@ public class ASMDeserializerFactory implements Opcodes {
                     mw.visitTypeInsn(CHECKCAST, getType(context.getClazz())); // cast
                     mw.visitVarInsn(ASTORE, context.var("instance"));
                 }
+            } else if (context.getBeanInfo().getObjectInstantiator() != null) {
+                String type = getType(context.getBeanInfo().getObjectInstantiator().getClass());
+                mw.visitTypeInsn(NEW, type);
+                mw.visitInsn(DUP);
+                mw.visitMethodInsn(INVOKESPECIAL, type, "<init>", "()V");
+                mw.visitVarInsn(ASTORE, context.var("instantiator"));
+                mw.visitVarInsn(ALOAD, context.var("instantiator"));
+                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(getDesc(context.getClazz())));
+                mw.visitMethodInsn(INVOKEVIRTUAL, type, "newInstance", "(Ljava/lang/Class;)Ljava/lang/Object;");
+                mw.visitTypeInsn(CHECKCAST, getType(context.getClazz()));
+                mw.visitVarInsn(ASTORE, context.var("instance"));
             } else {
                 mw.visitInsn(ACONST_NULL);
                 mw.visitTypeInsn(CHECKCAST, getType(context.getClazz())); // cast
@@ -379,16 +386,16 @@ public class ASMDeserializerFactory implements Opcodes {
                     mw.visitMethodInsn(INVOKESPECIAL, getType(context.getClazz()), "<init>",
                                        getDesc(creatorConstructor));
                     mw.visitVarInsn(ASTORE, context.var("instance"));
-                } else {
+                } else if (context.getBeanInfo().getObjectInstantiator() != null) {
+                    _batchSet(context, mw);
+                } else if(context.getBeanInfo().getFactoryMethod()!=null){
                     Method factoryMethod = context.getBeanInfo().getFactoryMethod();
-                    if (factoryMethod != null) {
-                        _loadCreatorParameters(context, mw);
-                        mw.visitMethodInsn(INVOKESTATIC, getType(factoryMethod.getDeclaringClass()),
-                                           factoryMethod.getName(), getDesc(factoryMethod));
-                        mw.visitVarInsn(ASTORE, context.var("instance"));
-                    } else {
-                        throw new JSONException("TODO");
-                    }
+                    _loadCreatorParameters(context, mw);
+                    mw.visitMethodInsn(INVOKESTATIC, getType(factoryMethod.getDeclaringClass()),
+                            factoryMethod.getName(), getDesc(factoryMethod));
+                    mw.visitVarInsn(ASTORE, context.var("instance"));
+                } else {
+                    throw new JSONException("TODO");
                 }
             }
         }
@@ -554,6 +561,14 @@ public class ASMDeserializerFactory implements Opcodes {
                     mw.visitInsn(POP);
                 }
             } else {
+                if(context.getBeanInfo().getObjectInstantiator()!=null){
+                    Field field=fieldInfo.getField();
+                    if(!Modifier.isPublic(field.getModifiers())){
+                        mw.visitLdcInsn(field.getName());
+                        mw.visitMethodInsn(INVOKESTATIC, "com/alibaba/fastjson/util/FieldUtils", "setValue", "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;)V");
+                        continue;
+                    }
+                }
                 mw.visitFieldInsn(PUTFIELD, getType(fieldInfo.getDeclaringClass()), fieldInfo.getField().getName(),
                                   getDesc(fieldInfo.getFieldClass()));
             }

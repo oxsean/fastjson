@@ -21,6 +21,7 @@ public class DeserializeBeanInfo {
     private Constructor<?>        defaultConstructor;
     private Constructor<?>        creatorConstructor;
     private Method                factoryMethod;
+    private ObjectInstantiator objectInstantiator;
 
     private final List<FieldInfo> fieldList = new ArrayList<FieldInfo>();
 
@@ -52,6 +53,14 @@ public class DeserializeBeanInfo {
 
     public void setFactoryMethod(Method factoryMethod) {
         this.factoryMethod = factoryMethod;
+    }
+
+    public ObjectInstantiator getObjectInstantiator() {
+        return objectInstantiator;
+    }
+
+    public void setObjectInstantiator(ObjectInstantiator objectInstantiator) {
+        this.objectInstantiator = objectInstantiator;
     }
 
     public Class<?> getClazz() {
@@ -160,8 +169,13 @@ public class DeserializeBeanInfo {
                 }
                 return beanInfo;
             }
-            
-            throw new JSONException("default constructor not found. " + clazz);
+
+            ObjectInstantiator instantiator=ObjectInstantiatorFactory.getObjectInstantiator();
+            if(instantiator!=null){
+                beanInfo.setObjectInstantiator(instantiator);
+            }else {
+                throw new JSONException("default constructor not found. " + clazz);
+            }
         }
 
         for (Method method : clazz.getMethods()) {
@@ -232,7 +246,7 @@ public class DeserializeBeanInfo {
             for (FieldInfo item : beanInfo.getFieldList()) {
                 if (item.getName().equals(field.getName())) {
                     contains = true;
-                    continue;
+                    break;
                 }
             }
             
@@ -241,6 +255,37 @@ public class DeserializeBeanInfo {
             }
 
             beanInfo.add(new FieldInfo(field.getName(), null, field));
+        }
+
+        if (beanInfo.getObjectInstantiator() != null) {
+            Class searchType = clazz;
+            while (!Object.class.equals(searchType) && searchType != null) {
+                Field[] fields = searchType.getDeclaredFields();
+                for (Field field : fields) {
+                    if (Modifier.isStatic(field.getModifiers())) {
+                        continue;
+                    }
+
+                    if (!Modifier.isPublic(field.getModifiers())) {
+                        field.setAccessible(true);
+                    }
+
+                    boolean contains = false;
+                    for (FieldInfo item : beanInfo.getFieldList()) {
+                        if (item.getName().equals(field.getName())) {
+                            contains = true;
+                            break;
+                        }
+                    }
+
+                    if (contains) {
+                        continue;
+                    }
+
+                    beanInfo.add(new FieldInfo(field.getName(), null, field));
+                }
+                searchType = searchType.getSuperclass();
+            }
         }
         
         for (Method method : clazz.getMethods()) {

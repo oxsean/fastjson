@@ -19,7 +19,7 @@ public class TestInnerClass2 extends TestCase {
         } catch (JSONException ex) {
             error = ex;
         }
-        Assert.assertNotNull(error);
+        Assert.assertNull(error);
     }
 
     private class VO {

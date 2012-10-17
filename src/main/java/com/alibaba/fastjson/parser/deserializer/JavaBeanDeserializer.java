@@ -88,20 +88,28 @@ public class JavaBeanDeserializer implements ObjectDeserializer {
             }
         }
 
-        if (beanInfo.getDefaultConstructor() == null) {
-            return null;
-        }
-
-        Object object;
-        try {
-            Constructor<?> constructor = beanInfo.getDefaultConstructor();
-            if (constructor.getParameterTypes().length == 0) {
-                object = constructor.newInstance();
-            } else {
-                object = constructor.newInstance(parser.getContext().getObject());
+        Object object = null;
+        if (beanInfo.getDefaultConstructor() != null) {
+            try {
+                Constructor<?> constructor = beanInfo.getDefaultConstructor();
+                if (constructor.getParameterTypes().length == 0) {
+                    object = constructor.newInstance();
+                } else {
+                    object = constructor.newInstance(parser.getContext().getObject());
+                }
+            } catch (Exception e) {
+                throw new JSONException("create instance error, class " + clazz.getName(), e);
             }
-        } catch (Exception e) {
-            throw new JSONException("create instance error, class " + clazz.getName(), e);
+        } else if (beanInfo.getObjectInstantiator() != null) {
+            try {
+                object = beanInfo.getObjectInstantiator().newInstance(beanInfo.getClazz());
+            } catch (Exception e) {
+                throw new JSONException("create instance by objectInstantiator error, "
+                        + beanInfo.getObjectInstantiator().toString(), e);
+            }
+        }
+        if (object == null) {
+            return null;
         }
 
         if (parser.isEnabled(Feature.InitStringFieldAsEmpty)) {
@@ -290,6 +298,13 @@ public class JavaBeanDeserializer implements ObjectDeserializer {
                     } catch (Exception e) {
                         throw new JSONException("create factory method error, "
                                                 + beanInfo.getFactoryMethod().toString(), e);
+                    }
+                }else if(beanInfo.getObjectInstantiator()!=null){
+                    try {
+                        object=beanInfo.getObjectInstantiator().newInstance(beanInfo.getClazz());
+                    } catch (Exception e) {
+                        throw new JSONException("create instance by objectInstantiator error, "
+                                                                        + beanInfo.getObjectInstantiator().toString(), e);
                     }
                 }
             }

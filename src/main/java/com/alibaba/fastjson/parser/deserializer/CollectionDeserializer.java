@@ -1,22 +1,18 @@
 package com.alibaba.fastjson.parser.deserializer;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.parser.DefaultJSONParser;
 import com.alibaba.fastjson.parser.JSONToken;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.*;
 
 public class CollectionDeserializer implements ObjectDeserializer {
 
     public final static CollectionDeserializer instance = new CollectionDeserializer();
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
         if (parser.getLexer().token() == JSONToken.NULL) {
             parser.getLexer().nextToken(JSONToken.COMMA);
@@ -36,7 +32,7 @@ public class CollectionDeserializer implements ObjectDeserializer {
             list = new ArrayList();
         } else {
             ObjectDeserializer deserializer = parser.getConfig().getDerializers().get(rawClass);
-            if (deserializer != null) {
+            if (deserializer != null && deserializer != this) {
                 return deserializer.deserialze(parser, type, fieldName);
             }
             try {

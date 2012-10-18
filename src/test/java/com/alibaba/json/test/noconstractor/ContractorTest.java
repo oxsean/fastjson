@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 
 public class ContractorTest extends TestCase {
 
-    public void test_list() throws Exception {
+    public void testContractor() throws Exception {
         A a = new A(new Timestamp(System.currentTimeMillis()),2323l);
         String text = JSON.toJSONString(a, SerializerFeature.WriteClassName);
         System.out.println(text);

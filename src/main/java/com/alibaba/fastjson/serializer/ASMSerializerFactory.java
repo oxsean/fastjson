@@ -935,10 +935,13 @@ public class ASMSerializerFactory implements Opcodes {
         Type propertyType = property.getFieldType();
 
         Type elementType;
+        int paramsCount = 1;
         if (propertyType instanceof Class) {
             elementType = Object.class;
         } else {
-            elementType = ((ParameterizedType) propertyType).getActualTypeArguments()[0];
+            Type[] types = ((ParameterizedType) propertyType).getActualTypeArguments();
+            elementType = types[0];
+            paramsCount = types.length;
         }
 
         Class<?> elementClass = null;
@@ -1033,7 +1036,7 @@ public class ASMSerializerFactory implements Opcodes {
 
             mw.visitJumpInsn(IF_ICMPGE, _end_for); // i < list.size - 1
 
-            if (elementType == String.class) {
+            if (elementType == String.class && paramsCount == 1) {
                 // out.write((String)list.get(i));
                 mw.visitVarInsn(ALOAD, context.var("out"));
                 mw.visitVarInsn(ALOAD, context.var("list"));
@@ -1070,7 +1073,7 @@ public class ASMSerializerFactory implements Opcodes {
 
             mw.visitLabel(_end_for);
 
-            if (elementType == String.class) {
+            if (elementType == String.class && paramsCount == 1) {
                 // out.write((String)list.get(size - 1));
                 mw.visitVarInsn(ALOAD, context.var("out"));
                 mw.visitVarInsn(ALOAD, context.var("list"));

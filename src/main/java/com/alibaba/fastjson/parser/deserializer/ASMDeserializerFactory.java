@@ -191,7 +191,7 @@ public class ASMDeserializerFactory implements Opcodes {
                                    "(Ljava/lang/Class;" + getDesc(SymbolTable.class) + "C)Ljava/lang/Enum;");
                 mw.visitTypeInsn(CHECKCAST, getType(fieldClass)); // cast
                 mw.visitVarInsn(ASTORE, context.var(fieldInfo.getName() + "_asm"));
-            } else if (Collection.class.isAssignableFrom(fieldClass)) {
+            } else if (isBasicCollection(fieldInfo)) {
                 Class<?> itemClass = getCollectionItemClass(fieldType);
                 if (itemClass == String.class) {
                     mw.visitVarInsn(ALOAD, context.var("lexer"));
@@ -517,7 +517,7 @@ public class ASMDeserializerFactory implements Opcodes {
                 mw.visitVarInsn(ASTORE, context.var(fieldInfo.getName() + "_asm"));
                 mw.visitLabel(enumNull_);
 
-            } else if (Collection.class.isAssignableFrom(fieldClass)) {
+            } else if (isBasicCollection(fieldInfo)) {
                 mw.visitVarInsn(ALOAD, context.var("lexer"));
                 mw.visitVarInsn(ALOAD, 0);
                 mw.visitFieldInsn(GETFIELD, context.getClassName(), fieldInfo.getName() + "_asm_prefix__", "[C");
@@ -1333,7 +1333,7 @@ public class ASMDeserializerFactory implements Opcodes {
                 continue;
             }
 
-            if (Collection.class.isAssignableFrom(fieldClass)) {
+            if (isBasicCollection(fieldInfo)) {
                 FieldVisitor fw = cw.visitField(ACC_PUBLIC, fieldInfo.getName() + "_asm_list_item_deser__",
                                                 getDesc(ObjectDeserializer.class));
                 fw.visitEnd();
@@ -1389,4 +1389,17 @@ public class ASMDeserializerFactory implements Opcodes {
         mw.visitEnd();
     }
 
+    private boolean isBasicCollection(FieldInfo fieldInfo) {
+        if (Collection.class.isAssignableFrom(fieldInfo.getFieldClass())) {
+            Type fieldType = fieldInfo.getFieldType();
+            int paramsCount = 1;
+            if (fieldType instanceof ParameterizedType) {
+                paramsCount = ((ParameterizedType) fieldType).getActualTypeArguments().length;
+            }
+            if (paramsCount == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

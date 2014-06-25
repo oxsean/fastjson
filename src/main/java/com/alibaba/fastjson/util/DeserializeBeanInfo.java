@@ -165,6 +165,10 @@ public class DeserializeBeanInfo {
                 continue;
             }
 
+            if(method.isBridge()){
+                continue;
+            }
+
             if (Modifier.isStatic(method.getModifiers())) {
                 continue;
             }
@@ -269,6 +273,10 @@ public class DeserializeBeanInfo {
         for (Method method : clazz.getMethods()) {
             String methodName = method.getName();
             if (methodName.length() < 4) {
+                continue;
+            }
+
+            if(method.isBridge()){
                 continue;
             }
 

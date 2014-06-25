@@ -906,6 +906,10 @@ public class TypeUtils {
         for (Method method : clazz.getMethods()) {
             String methodName = method.getName();
 
+            if(method.isBridge()){
+                continue;
+            }
+
             if (Modifier.isStatic(method.getModifiers())) {
                 continue;
             }

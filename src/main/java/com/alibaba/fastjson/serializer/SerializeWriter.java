@@ -573,6 +573,9 @@ public final class SerializeWriter extends Writer {
         if (i == Long.MIN_VALUE) {
             write("-9223372036854775808");
             return;
+        } else if (i > 9007199254740992l) {
+            writeString(Long.toString(i));
+            return;
         }
 
         int size = (i < 0) ? IOUtils.stringSize(-i) + 1 : IOUtils.stringSize(i);

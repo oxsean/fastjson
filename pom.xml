@@ -12,7 +12,7 @@
 
 	<groupId>com.alibaba</groupId>
 	<artifactId>fastjson</artifactId>
-	<version>1.1.41-4</version>
+	<version>1.1.41-5</version>
 
 	<packaging>jar</packaging>
 	<name>fastjson</name>
@@ -206,6 +206,7 @@
 
 
 	<dependencies>
+
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>

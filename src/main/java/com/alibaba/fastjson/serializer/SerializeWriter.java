@@ -15,7 +15,11 @@
  */
 package com.alibaba.fastjson.serializer;
 
-import static com.alibaba.fastjson.parser.CharTypes.replaceChars;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.CharTypes;
+import com.alibaba.fastjson.util.Base64;
+import com.alibaba.fastjson.util.IOUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -24,11 +28,7 @@ import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.parser.CharTypes;
-import com.alibaba.fastjson.util.Base64;
-import com.alibaba.fastjson.util.IOUtils;
+import static com.alibaba.fastjson.parser.CharTypes.replaceChars;
 
 /**
  * @author wenshao<szujobs@hotmail.com>
@@ -1086,6 +1086,10 @@ public final class SerializeWriter extends Writer {
     }
 
     public void writeFieldValue(char seperator, String name, long value) {
+        if (value > 9007199254740992l) {
+            writeFieldValue1(seperator, name, value);
+            return;
+        }
         if (value == Long.MIN_VALUE || (!isEnabled(SerializerFeature.QuoteFieldNames))) {
             writeFieldValue1(seperator, name, value);
             return;
